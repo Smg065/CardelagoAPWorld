@@ -156,7 +156,7 @@ class ItemPercentages(OptionCounter):
     }
 
 @dataclass
-class ArcardelagoOptions(PerGameCommonOptions):
+class CardelagoOptions(PerGameCommonOptions):
     difficulty : Difficulty
     adjacency_odds : AdjacencyOdds
     branching_odds : BranchingOdds

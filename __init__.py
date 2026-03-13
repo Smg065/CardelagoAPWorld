@@ -4,36 +4,36 @@ import logging
 from BaseClasses import Item, Location, Region, Tutorial, ItemClassification
 from worlds.generic.Rules import set_rule
 from .ItemPool import spheres_table, all_items_table, progression_table, filler_table, useful_table, trap_table
-from .Options import ArcardelagoOptions
+from .Options import CardelagoOptions
 
 from ..AutoWorld import World, WebWorld
 from NetUtils import SlotType
 
-class ArcardelagoItem(Item):
-    game: str = "Arcardelago"
+class CardelagoItem(Item):
+    game: str = "Cardelago"
 
-class ArcardelagoLocation(Location):
-    Arcardelago : str = "Arcardelago"
+class CardelagoLocation(Location):
+    Cardelago : str = "Cardelago"
 
-class ArcardelagoWeb(WebWorld):
+class CardelagoWeb(WebWorld):
     englishTut = Tutorial("",
-                     """A guide for setting up Arcardelago on your computer.""",
+                     """A guide for setting up Cardelago on your computer.""",
                      "English",
                      "setup_en.md",
                      "setup/en",
                      ["Smg065"])
     tutorials = [englishTut]
 
-class ArcardelagoWorld(World):
+class CardelagoWorld(World):
     """
-    Arcardelago is a game that uses items at it's locations as in-game items.
+    Cardelago is a game that uses items at it's locations as in-game items.
     """
-    game : str = "Arcardelago"
-    version : str = "V0.4"
-    web = ArcardelagoWeb()
+    game : str = "Cardelago"
+    version : str = "V0.5"
+    web = CardelagoWeb()
     topology_present = True
-    options_dataclass = ArcardelagoOptions
-    options : ArcardelagoOptions
+    options_dataclass = CardelagoOptions
+    options : CardelagoOptions
     card_colors : list[str] = ["Red", "Green", "Violet", "Orange", "Blue", "Yellow"]
     #Items
     item_name_to_id = {}
@@ -58,7 +58,7 @@ class ArcardelagoWorld(World):
         multiworld.push_precollected(spawning_sphere)
         self.final_boss_origin = self.random.choice(list(multiworld.player_name.values()))
         #Victory Condition
-        all_bosses : ArcardelagoLocation = ArcardelagoLocation(player, "All Bosses", None, menu_region)
+        all_bosses : CardelagoLocation = CardelagoLocation(player, "All Bosses", None, menu_region)
         all_bosses.place_locked_item(self.create_event("Victory"))
         menu_region.locations.append(all_bosses)
         multiworld.completion_condition[player] = lambda state: state.has("Victory", player)
@@ -101,7 +101,7 @@ class ArcardelagoWorld(World):
             #For the total number there are per region
             for card_number in range(self.options.cards_per_region):
                 card_id = (region_index * 100) + card_number
-                each_card : ArcardelagoLocation = ArcardelagoLocation(player, region_color + " Card " + str(card_number + 1), card_id + 65000, origin_region)
+                each_card : CardelagoLocation = CardelagoLocation(player, region_color + " Card " + str(card_number + 1), card_id + 65000, origin_region)
                 origin_region.locations.append(each_card)
             
         return super().generate_early()
@@ -207,11 +207,11 @@ class ArcardelagoWorld(World):
                 item_classification = ItemClassification.trap
             case "Useful":
                 item_classification = ItemClassification.useful
-        item_output = ArcardelagoItem(name, item_classification, item_id, self.player)
+        item_output = CardelagoItem(name, item_classification, item_id, self.player)
         return item_output
 
     def create_event(self, name: str):
-        return ArcardelagoItem(name, ItemClassification.progression, None, self.player)
+        return CardelagoItem(name, ItemClassification.progression, None, self.player)
 
     def create_items(self) -> None:
         core_items : list = []
@@ -229,7 +229,7 @@ class ArcardelagoWorld(World):
         #The filler, useful and trap items that scale
         noncore_count = (self.options.cards_per_region * 6) - core_item_count
         #Noncore Spawning Garunteed
-        noncore_items : list[ArcardelagoItem] = []
+        noncore_items : list[CardelagoItem] = []
         for item_name, item_percent in self.options.item_percentages.value.items():
             to_spawn = (item_percent * noncore_count) // 100
             for _ in range(to_spawn):

@@ -1,6 +1,6 @@
 from typing import NamedTuple
 
-#Arcardelago
+#Cardelago
 BASE_ID			= 6500000
 #Color IDs
 RED_ID			=   10000
