@@ -30,7 +30,7 @@ class CardelagoWorld(World):
     Cardelago is a game that uses items at it's locations as in-game items.
     """
     game : str = "Cardelago"
-    version : str = "V0.5"
+    version : str = "V0.6"
     web = CardelagoWeb()
     topology_present = True
     options_dataclass = CardelagoOptions
@@ -49,7 +49,6 @@ class CardelagoWorld(World):
 
     def generate_early(self):
         player = self.player
-        multiworld = self.multiworld
 
         #Option Erroring for missing Sphere Item locations
         for each_color in self.card_colors:
@@ -57,25 +56,25 @@ class CardelagoWorld(World):
                 raise OptionError("The locations of Sphere Items are what define bosses, cannot remove them from the item pool!")
 
         #Basic setup
-        menu_region : Region = Region("Menu", player, multiworld)
-        multiworld.regions.append(menu_region)
+        menu_region : Region = Region("Menu", player, self.multiworld)
+        self.multiworld.regions.append(menu_region)
         self.spawning_sphere = self.random.choice(list(spheres_table.keys()))
         spawning_sphere = self.create_item(self.spawning_sphere)
-        multiworld.push_precollected(spawning_sphere)
-        self.final_boss_origin = self.random.choice(list(multiworld.player_name.values()))
+        self.multiworld.push_precollected(spawning_sphere)
+        self.final_boss_origin = self.random.choice(list(self.multiworld.player_name.values()))
         #Victory Condition
         all_bosses : CardelagoLocation = CardelagoLocation(player, "All Bosses", None, menu_region)
         all_bosses.place_locked_item(self.create_event("Victory"))
         menu_region.locations.append(all_bosses)
-        multiworld.completion_condition[player] = lambda state: state.has("Victory", player)
+        self.multiworld.completion_condition[player] = lambda state: state.has("Victory", player)
         set_rule(all_bosses, lambda state: state.has_all(list(spheres_table.keys()), player))
 
         #Create the 6 regions
         color_to_region : Dict[str, Region] = {}
         for color_name in self.card_colors:
-            each_region : Region = Region(color_name + " Region", player, multiworld)
+            each_region : Region = Region(color_name + " Region", player, self.multiworld)
             color_to_region[color_name] = each_region
-            multiworld.regions.append(each_region)
+            self.multiworld.regions.append(each_region)
             #Spawning sphere is
             if self.spawning_sphere.startswith(color_name):
                 menu_region.connect(each_region, color_name + "Spawn")
@@ -201,9 +200,9 @@ class CardelagoWorld(World):
                 menu_region.add_event(base_color + " Sphere Requirement " + str(1 + each_index), each_connection + " Gate")
         
         #Build boss order
-        self.expected_order : list[str] = [self.spawning_sphere]
-        possible_next : list[str] = self.world_order[self.spawning_sphere].copy()
-        while self.expected_order < 6:
+        self.expected_order : list[str] = [spawn_color]
+        possible_next : list[str] = self.world_order[spawn_color].copy()
+        while len(self.expected_order) < 6:
             next_sphere : str = self.random.choice(possible_next)
             self.expected_order.append(next_sphere)
             possible_next.extend(self.world_order[next_sphere].copy())

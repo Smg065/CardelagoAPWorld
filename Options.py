@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from Options import Choice, PerGameCommonOptions, Range, OptionCounter
+from Options import Choice, PerGameCommonOptions, Range, OptionCounter, StartInventoryPool
 
 class Difficulty(Choice):
     """Difficulty. Default Easy.
@@ -175,6 +175,7 @@ class ItemPercentages(OptionCounter):
 
 @dataclass
 class CardelagoOptions(PerGameCommonOptions):
+    start_inventory_from_pool : StartInventoryPool
     difficulty : Difficulty
     expected_sphere_logic : ExpectedSphereLogic
     adjacency_odds : AdjacencyOdds
