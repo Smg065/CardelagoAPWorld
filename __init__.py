@@ -2,9 +2,10 @@ from typing import Any, Dict
 import logging
 
 from BaseClasses import Item, Location, Region, Tutorial, ItemClassification
+from Options import OptionError
 from worlds.generic.Rules import set_rule
 from .ItemPool import spheres_table, all_items_table, progression_table, filler_table, useful_table, trap_table
-from .Options import CardelagoOptions
+from .Options import CardelagoOptions, ExpectedSphereLogic
 
 from ..AutoWorld import World, WebWorld
 from NetUtils import SlotType
@@ -50,6 +51,11 @@ class CardelagoWorld(World):
         player = self.player
         multiworld = self.multiworld
 
+        #Option Erroring for missing Sphere Item locations
+        for each_color in self.card_colors:
+            if each_color + " Sphere" in self.options.start_inventory_from_pool:
+                raise OptionError("The locations of Sphere Items are what define bosses, cannot remove them from the item pool!")
+
         #Basic setup
         menu_region : Region = Region("Menu", player, multiworld)
         multiworld.regions.append(menu_region)
@@ -82,16 +88,33 @@ class CardelagoWorld(World):
 
         #Gate regions based on that order
         for region_color, region_connections in self.world_order.items():
+            sphere_in_expected : bool
+            match self.options.expected_sphere_logic.value:
+                case ExpectedSphereLogic.option_on:
+                    sphere_in_expected = True
+                case ExpectedSphereLogic.option_off:
+                    sphere_in_expected = False
+                case ExpectedSphereLogic.option_mixed:
+                    sphere_in_expected = self.random.randint(0, 1) == 0
             #The key of the graph node is the origin you're starting at
             from_region = color_to_region[region_color]
             for each_connection in region_connections:
                 #Create the requirements
                 generated_requirements = [each_connection + " Sphere"]
+
                 #Each value at the key is the destination it leads to
                 to_region = color_to_region[each_connection]
+                
                 #The region this is in potentially prevents you from getting there via obstacles
                 if each_connection in self.breaker_priority[region_color]:
                     generated_requirements.append(self.color_to_breaker(each_connection))
+                
+                #The region this is in expects you to do the previous region
+                if sphere_in_expected:
+                    previous_expected : str = self.expected_order[self.expected_order.index(each_connection) - 1]
+                    if not previous_expected + " Sphere" in generated_requirements:
+                        generated_requirements.append(previous_expected + " Sphere")
+
                 #Go from one to the other, requiring the sphere as the key
                 from_region.connect(to_region, "Unlock " + each_connection + " Gate", lambda state, requires = generated_requirements: state.has_all(requires, self.player))
         
@@ -160,7 +183,6 @@ class CardelagoWorld(World):
                 #Pick a color at random from the remaining if valid's aren't a concern
                 color_selected = self.random.choice(colors_remaining)
                 
-
             #Assign into dictionary, creating a new list when needed
             self.world_order[branching_node].append(color_selected)
             #This is no longer a sphere in the selectable pool
@@ -173,10 +195,20 @@ class CardelagoWorld(World):
             if self.random.randint(1, self.options.branching_odds) != 1:
                 branching_node = color_selected
         
-        #Inform the spoiler log of the logic construction here
         for base_color, color_connections in self.world_order.items():
             for each_index, each_connection in enumerate(color_connections):
+                #Inform the spoiler log of the logic construction here
                 menu_region.add_event(base_color + " Sphere Requirement " + str(1 + each_index), each_connection + " Gate")
+        
+        #Build boss order
+        self.expected_order : list[str] = [self.spawning_sphere]
+        possible_next : list[str] = self.world_order[self.spawning_sphere].copy()
+        while self.expected_order < 6:
+            next_sphere : str = self.random.choice(possible_next)
+            self.expected_order.append(next_sphere)
+            possible_next.extend(self.world_order[next_sphere].copy())
+            possible_next.remove(next_sphere)
+
 
     def color_to_breaker(self, in_color : str):
         #Color to breaker types
@@ -270,6 +302,8 @@ class CardelagoWorld(World):
         options["breaker_priority"] = self.breaker_priority
         options["spawning_sphere"] = self.spawning_sphere
         options["world_order"] = self.world_order
+        options["expected_sphere_logic"] = self.options.expected_sphere_logic.value
+        options["expected_order"] = self.expected_order
         options["player_name"] = self.multiworld.player_name[self.player]
         options["seed"] = self.random.randint(-6500000, 6500000)
         options["version"] = self.version

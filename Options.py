@@ -12,9 +12,20 @@ class Difficulty(Choice):
     option_normal = 1
     option_hard = 2
 
+class ExpectedSphereLogic(Choice):
+    """If logic expects you to complete spheres in order.
+    On: Always expects.
+    Off: Never expects.
+    Mixed: Chooses for each sphere at random."""
+    display_name = "Expected Sphere Logic"
+    option_on = 0
+    option_off = 1
+    option_mixed = 2
+
 class AdjacencyOdds(Range):
     """The chances that the map will need to warp to the next location. Default 3.
     """
+    display_name = "Adjacency Odds"
     range_start = 1
     range_end = 10
     default = 3
@@ -22,6 +33,7 @@ class AdjacencyOdds(Range):
 class BranchingOdds(Range):
     """The chances that the map will branch out. Default 5.
     """
+    display_name = "Branching Odds"
     range_start = 1
     range_end = 10
     default = 5
@@ -29,6 +41,7 @@ class BranchingOdds(Range):
 class CardsPerRegion(Range):
     """The number of cards that each region has. Default 20.
     """
+    display_name = "Cards Per Region"
     range_start = 5
     range_end = 100
     default = 20
@@ -36,6 +49,7 @@ class CardsPerRegion(Range):
 class MapRadius(Range):
     """The radius of the map generated. Default 25.
     """
+    display_name = "Map Radius"
     range_start = 20
     range_end = 100
     default = 25
@@ -43,6 +57,7 @@ class MapRadius(Range):
 class TrapReleasePercent(Range):
     """The odds that a trap will release itself at the end of a battle. Default 13.
     """
+    display_name = "Trap Release Percentage"
     range_start = 0
     range_end = 100
     default = 13
@@ -54,6 +69,7 @@ class TilesPerPip(Range):
     49 = 3 Tile Radius of buffer space
     81 = 4 Tile Radius of buffer space
     """
+    display_name = "Tiles Per Pip"
     range_start = 9
     range_end = 100
 
@@ -80,6 +96,7 @@ class NodePercentages(OptionCounter):
     Event:          A choice or minigame that can boost or hinder you.      Default 10%
     Enemy:          Enemy cards which must be defeated to pass.             Default 40%
     """
+    display_name = "Node Percentages"
     min = 0
     max = 100
     default = {
@@ -123,6 +140,7 @@ class ItemPercentages(OptionCounter):
     Stackless Trap:     You can't stack cards in your next battle.                                      Default 00%
     Blind Trap:         You can't see what cards are available in your next shop, event or treasure.    Default 00%
     """
+    display_name = "Item Percentages"
     min = 0
     max = 100
     default = {
@@ -158,6 +176,7 @@ class ItemPercentages(OptionCounter):
 @dataclass
 class CardelagoOptions(PerGameCommonOptions):
     difficulty : Difficulty
+    expected_sphere_logic : ExpectedSphereLogic
     adjacency_odds : AdjacencyOdds
     branching_odds : BranchingOdds
     cards_per_region : CardsPerRegion
