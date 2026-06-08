@@ -49,6 +49,7 @@ class CardelagoWorld(World):
 
     def generate_early(self):
         player = self.player
+        multiworld = self.multiworld
 
         #Option Erroring for missing Sphere Item locations
         for each_color in self.card_colors:
@@ -56,25 +57,25 @@ class CardelagoWorld(World):
                 raise OptionError("The locations of Sphere Items are what define bosses, cannot remove them from the item pool!")
 
         #Basic setup
-        menu_region : Region = Region("Menu", player, self.multiworld)
-        self.multiworld.regions.append(menu_region)
+        menu_region : Region = Region("Menu", player, multiworld)
+        multiworld.regions.append(menu_region)
         self.spawning_sphere = self.random.choice(list(spheres_table.keys()))
         spawning_sphere = self.create_item(self.spawning_sphere)
-        self.multiworld.push_precollected(spawning_sphere)
-        self.final_boss_origin = self.random.choice(list(self.multiworld.player_name.values()))
+        multiworld.push_precollected(spawning_sphere)
+        self.final_boss_origin = self.random.choice(list(multiworld.player_name.values()))
         #Victory Condition
         all_bosses : CardelagoLocation = CardelagoLocation(player, "All Bosses", None, menu_region)
         all_bosses.place_locked_item(self.create_event("Victory"))
         menu_region.locations.append(all_bosses)
-        self.multiworld.completion_condition[player] = lambda state: state.has("Victory", player)
+        multiworld.completion_condition[player] = lambda state: state.has("Victory", player)
         set_rule(all_bosses, lambda state: state.has_all(list(spheres_table.keys()), player))
 
         #Create the 6 regions
         color_to_region : Dict[str, Region] = {}
         for color_name in self.card_colors:
-            each_region : Region = Region(color_name + " Region", player, self.multiworld)
+            each_region : Region = Region(color_name + " Region", player, multiworld)
             color_to_region[color_name] = each_region
-            self.multiworld.regions.append(each_region)
+            multiworld.regions.append(each_region)
             #Spawning sphere is
             if self.spawning_sphere.startswith(color_name):
                 menu_region.connect(each_region, color_name + "Spawn")
@@ -86,7 +87,8 @@ class CardelagoWorld(World):
         self.get_obstacles_priorities()
 
         #Gate regions based on that order
-        for region_color, region_connections in self.world_order.items():
+        self.enforced_expected : list[bool] = []
+        for _ in range(6):
             sphere_in_expected : bool
             match self.options.expected_sphere_logic.value:
                 case ExpectedSphereLogic.option_on:
@@ -95,6 +97,9 @@ class CardelagoWorld(World):
                     sphere_in_expected = False
                 case ExpectedSphereLogic.option_mixed:
                     sphere_in_expected = self.random.randint(0, 1) == 0
+            self.enforced_expected.append(sphere_in_expected)
+
+        for region_color, region_connections in self.world_order.items():
             #The key of the graph node is the origin you're starting at
             from_region = color_to_region[region_color]
             for each_connection in region_connections:
@@ -109,7 +114,7 @@ class CardelagoWorld(World):
                     generated_requirements.append(self.color_to_breaker(each_connection))
                 
                 #The region this is in expects you to do the previous region
-                if sphere_in_expected:
+                if self.enforced_expected[self.card_colors.index(region_color)]:
                     previous_expected : str = self.expected_order[self.expected_order.index(each_connection) - 1]
                     if not previous_expected + " Sphere" in generated_requirements:
                         generated_requirements.append(previous_expected + " Sphere")
@@ -301,7 +306,7 @@ class CardelagoWorld(World):
         options["breaker_priority"] = self.breaker_priority
         options["spawning_sphere"] = self.spawning_sphere
         options["world_order"] = self.world_order
-        options["expected_sphere_logic"] = self.options.expected_sphere_logic.value
+        options["enforced_expected"] = self.enforced_expected
         options["expected_order"] = self.expected_order
         options["player_name"] = self.multiworld.player_name[self.player]
         options["seed"] = self.random.randint(-6500000, 6500000)
