@@ -30,7 +30,7 @@ class CardelagoWorld(World):
     Cardelago is a game that uses items at it's locations as in-game items.
     """
     game : str = "Cardelago"
-    version : str = "V0.6"
+    version : str = "V0.7"
     web = CardelagoWeb()
     topology_present = True
     options_dataclass = CardelagoOptions
